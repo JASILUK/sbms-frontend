@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add smooth scroll behavior to html */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Add scroll margin to account for fixed header */
+.scroll-mt-20 {
+  scroll-margin-top: 5rem; /* 80px - matches nav height */
+}
+
+/* Add to your global CSS or Tailwind config */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+
+
+@keyframes laserSweep {
+  0% { top: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes bounceLeft {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
+
+@keyframes bounceRight {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+.animate-laserSweep {
+  animation: laserSweep 2.5s infinite linear;
+}
+
+.animate-bounceLeft {
+  animation: bounceLeft 0.8s infinite ease-in-out;
+}
+
+.animate-bounceRight {
+  animation: bounceRight 0.8s infinite ease-in-out;
+}
+
+.animate-spin-slow {
+  animation: spin 12s linear infinite;
+}
