@@ -1,24 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserCheck, Search, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
 import { FaceCameraCapture } from '../face-enrollment/FaceCameraCapture'; 
+import { useChallengeSequence } from '../../hooks/useChallengeSequence';
 import { useGetEmployeesQuery } from '../../../emplyees/emplyeeApi'; 
 
 export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, modelsReady = true }) {
   const [step, setStep] = useState(1); // 1: Select Employee, 2: Camera Pipeline Capture
   const [targetId, setTargetId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [wizardStep, setWizardStep] = useState(1);
-  const [hrCachedEmbedding, setHrCachedEmbedding] = useState(null); // ✅ FIXED: Safely caches embedding data locally
+  const [wizardStep, setWizardStep] = useState('SCANNING_ACTIVE');
+  const [hrCachedEmbedding, setHrCachedEmbedding] = useState(null); 
+
+  // ✅ Instantiate the challenge sequence engine inside the HR context pool
+  const challengeEngine = useChallengeSequence();
+  const { sequence, generateSequence, reset: resetChallenges } = challengeEngine;
 
   // Ingest real workspace employee memberships using RTK-Query
   const { data: serverResponse, isLoading: loadingEmployees } = useGetEmployeesQuery(undefined, { skip: !isOpen });
 
   if (!isOpen) return null;
 
-  // Extract the data array correctly from the API envelope wrapper
   const employeesPool = Array.isArray(serverResponse?.data) ? serverResponse.data : [];
 
-  // Performs search filtering using the correct top-level API keys ('username', 'user_email', 'department_name')
   const filteredEmployees = employeesPool.filter(emp => {
     const searchableText = `${emp.username || ''} ${emp.user_email || ''} ${emp.department_name || ''} ${emp.job_title || ''}`.toLowerCase();
     return searchableText.includes(searchQuery.toLowerCase());
@@ -26,27 +29,36 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
 
   const handleNextToCamera = (e) => {
     e.preventDefault();
-    if (targetId) setStep(2);
+    if (targetId) {
+      resetChallenges();
+      generateSequence(); // Generate dynamic target sequence steps for this employee
+      setWizardStep('SCANNING_ACTIVE');
+      setStep(2);
+    }
   };
 
-  // ✅ FIXED: Safely intercept matrix coordinates array, preventing automated continuous API blasts
   const handleDescriptorGenerated = (descriptor) => {
-    setHrCachedEmbedding(descriptor);
+    if (!descriptor) return;
+    const cleanArray = Array.from(descriptor);
+    setHrCachedEmbedding(cleanArray);
+    // Switch step layout flag string safely upon descriptor capture
+    setWizardStep('SHOW_COMMIT_PANEL');
   };
 
-  // ✅ FIXED: Explicitly triggers mutation submit action only when clicking the primary commit button
   const handleCommitHREnrollment = async () => {
     if (!hrCachedEmbedding || isSubmitting) return;
     try {
       await onEnroll({ membership_id: Number(targetId), embedding: hrCachedEmbedding });
       handleModalCloseCleanup();
     } catch (err) {
-      console.error("HR direct profile ingestion failure:", err);
+      console.error("HR direct profile profile ingestion failure:", err);
     }
   };
 
   const handleResetWizardSequence = () => {
-    setWizardStep(1);
+    resetChallenges();
+    generateSequence();
+    setWizardStep('SCANNING_ACTIVE');
     setHrCachedEmbedding(null);
   };
 
@@ -54,8 +66,9 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
     setStep(1);
     setTargetId('');
     setSearchQuery('');
-    setWizardStep(1);
+    setWizardStep('SCANNING_ACTIVE');
     setHrCachedEmbedding(null);
+    resetChallenges();
     onClose();
   };
 
@@ -80,7 +93,6 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
           {step === 1 ? (
             <form onSubmit={handleNextToCamera} className="space-y-4 w-full">
               
-              {/* Premium Search Query Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Search Employee Profile
@@ -97,7 +109,6 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
                 </div>
               </div>
 
-              {/* Selection Options Dropdown Container */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Select Target Employee Workspace Record
@@ -127,7 +138,6 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
                 )}
               </div>
 
-              {/* Action Trigger Button */}
               <button
                 type="submit"
                 disabled={!targetId || loadingEmployees}
@@ -139,19 +149,28 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
             </form>
           ) : (
             <div className="w-full flex flex-col items-center space-y-4">
-              {/* Camera Pipeline Capture Section Layout */}
-              <FaceCameraCapture
-                currentStep={wizardStep}
-                onStepVerified={() => setWizardStep(prev => prev + 1)}
-                onDescriptorGenerated={handleDescriptorGenerated}
-                onResetWizard={handleResetWizardSequence}
-                isSubmitting={isSubmitting}
-                modelsReady={modelsReady}
-                isModalContext={true}
-              />
+              
+              {/* ✅ FIXED: Wait for the challenge array sequence data to register cleanly before mounting the camera component view layout */}
+              {sequence && sequence.length > 0 ? (
+                <FaceCameraCapture
+                  challengeEngine={challengeEngine}
+                  onStepVerified={() => console.log('HR Enrollment Step Verified')}
+                  onDescriptorGenerated={handleDescriptorGenerated}
+                  onResetWizard={handleResetWizardSequence}
+                  isSubmitting={isSubmitting}
+                  modelsReady={modelsReady}
+                />
+              ) : (
+                <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center w-full max-w-sm mx-auto min-h-[340px]">
+                  <div className="flex flex-col items-center justify-center gap-2 text-slate-400 font-bold text-xs animate-pulse">
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                    <span>Configuring challenge matrices validation sequence...</span>
+                  </div>
+                </div>
+              )}
 
-              {/* ✅ FIXED: Interactive Commit Actions Deck rendered strictly at preview complete step */}
-              {wizardStep === 4 && hrCachedEmbedding && (
+              {/* Match conditional check against the state string flag */}
+              {wizardStep === 'SHOW_COMMIT_PANEL' && hrCachedEmbedding && (
                 <div className="w-full max-w-sm border-t border-slate-100 pt-4 space-y-2 animate-fadeIn">
                   <button
                     type="button"
@@ -172,7 +191,8 @@ export function HREnrollmentModal({ isOpen, onClose, onEnroll, isSubmitting, mod
                     onClick={() => {
                       setStep(1);
                       setHrCachedEmbedding(null);
-                      setWizardStep(1);
+                      setWizardStep('SCANNING_ACTIVE');
+                      resetChallenges();
                     }}
                     className="w-full py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold rounded-xl text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
                   >

@@ -1,7 +1,3 @@
-// ============================================
-// FaceEnrollmentPage.jsx — SIMPLE
-// ============================================
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ScanFace, AlertTriangle, Loader2 } from 'lucide-react';
@@ -25,13 +21,14 @@ import { FaceEnrollmentInstructions } from '../components/face-enrollment/FaceEn
 import { FaceEnrollmentSkeleton } from '../components/face-enrollment/FaceEnrollmentSkeleton';
 
 export default function FaceEnrollmentPage() {
+  // ✅ ENHANCED: Use clean state variables to prevent string/number matching collisions
   const [wizardStep, setWizardStep] = useState(WIZARD_STEPS.INTRODUCTION);
   const [modelsReady, setModelsReady] = useState(false);
   const [modelError, setModelError] = useState(null);
   const [cachedDescriptorArray, setCachedDescriptorArray] = useState(null);
 
   const challengeEngine = useChallengeSequence();
-  const { sequence, currentIndex, progress, generateSequence, moveNext, reset: resetChallenges } = challengeEngine;
+  const { sequence, currentIndex, reset: resetChallenges, generateSequence } = challengeEngine;
 
   const { methods: methodsPool, isLoading: loadingMethods } = useAttendanceMethods();
   const { data: policyConfig, isLoading: loadingPolicy } = useGetFaceEnrollmentPolicyQuery();
@@ -70,23 +67,29 @@ export default function FaceEnrollmentPage() {
     setCachedDescriptorArray(null);
     resetChallenges();
     generateSequence();
-    setWizardStep(1); 
+    // ✅ FIXED: Set a descriptive matching string state flag instead of an unstable raw integer
+    setWizardStep('SCANNING_ACTIVE'); 
   };
 
   const handleStepCompletionSequence = () => {
-    setWizardStep(prev => prev + 1);
+    console.log(`Step ${currentIndex + 1} passed inside the active challenge engine pool.`);
   };
 
   const handleResetCaptureSequence = () => {
     setCachedDescriptorArray(null);
     resetChallenges();
     generateSequence();
-    setWizardStep(1);
+    setWizardStep('SCANNING_ACTIVE');
   };
 
   const handleReceiveDescriptorArray = (descriptorArray) => {
-    setCachedDescriptorArray(descriptorArray);
-    setWizardStep(WIZARD_STEPS.CAPTURE_PREVIEW); 
+    if (!descriptorArray) return;
+    const cleanArray = Array.from(descriptorArray);
+    console.log("🧬 Descriptor matrix cached safely at parent level. Size:", cleanArray.length);
+    setCachedDescriptorArray(cleanArray);
+    
+    // ✅ FIXED: Explicitly force the layout wizard step value state change to match button triggers
+    setWizardStep('SHOW_COMMIT_PANEL'); 
   };
 
   const handleDispatchPayloadMutation = async () => {
@@ -173,8 +176,9 @@ export default function FaceEnrollmentPage() {
             <div className="space-y-3">
               {sequence.map((challengeName, index) => {
                 const stepNum = index + 1;
-                const isPassed = currentIndex > index || wizardStep === WIZARD_STEPS.CAPTURE_PREVIEW;
-                const isCurrent = currentIndex === index && wizardStep !== WIZARD_STEPS.CAPTURE_PREVIEW;
+                // ✅ FIXED: Checks explicitly against state flags to illuminate badges correctly
+                const isPassed = currentIndex > index || wizardStep === 'SHOW_COMMIT_PANEL';
+                const isCurrent = currentIndex === index && wizardStep !== 'SHOW_COMMIT_PANEL';
 
                 return (
                   <div key={challengeName + index} className="flex items-center gap-2 text-[11px]">
@@ -193,13 +197,14 @@ export default function FaceEnrollmentPage() {
               })}
             </div>
 
-            {wizardStep === WIZARD_STEPS.CAPTURE_PREVIEW && (
+            {/* ✅ FIXED: Render check matches 'SHOW_COMMIT_PANEL' explicitly now */}
+            {wizardStep === 'SHOW_COMMIT_PANEL' && (
               <div className="pt-3 border-t border-slate-100 space-y-2 animate-scaleIn">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleDispatchPayloadMutation}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98"
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && <Loader2 className="h-3 w-3 animate-spin text-white" />}
                   <span>Commit Biometric Profile</span>

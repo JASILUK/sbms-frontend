@@ -52,7 +52,7 @@ export default function FaceEnrollmentManagementPage() {
     setModalState(prev => ({ ...prev, [type]: state }));
   };
 
-  // ✅ FIXED: Better skeleton fallback orchestration preventing visual layout shift gaps
+  // FIXED: Better skeleton fallback orchestration preventing visual layout shift gaps
   if (loadingMethods || (loadingTable && (!records || records.length === 0))) {
     return (
       <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
@@ -133,9 +133,10 @@ export default function FaceEnrollmentManagementPage() {
         isOpen={modalState.reject}
         isSubmitting={isRejecting}
         onClose={() => toggleModal('reject', false)}
-        onConfirm={async (reason) => {
+        onConfirm={async (payload) => {
           try {
-            await rejectTrigger({ id: activeId, reason }).unwrap();
+            const requestData = typeof payload === 'object' && payload !== null ? payload : { reason: payload };
+            await rejectTrigger({ id: activeId, ...requestData }).unwrap();
             toast.success('Biometric profile enrollment request rejected.');
             toggleModal('reject', false);
             refetch();
@@ -149,9 +150,10 @@ export default function FaceEnrollmentManagementPage() {
         isOpen={modalState.revoke}
         isSubmitting={isRevoking}
         onClose={() => toggleModal('revoke', false)}
-        onConfirm={async (reason) => {
+        onConfirm={async (payload) => {
           try {
-            await revokeTrigger({ id: activeId, reason }).unwrap();
+            const requestData = typeof payload === 'object' && payload !== null ? payload : { reason: payload };
+            await revokeTrigger({ id: activeId, ...requestData }).unwrap();
             toast.success('Active biometric profile revoked and deactivated successfully.');
             toggleModal('revoke', false);
             refetch();
@@ -164,6 +166,8 @@ export default function FaceEnrollmentManagementPage() {
       <HREnrollmentModal
         isOpen={modalState.hrEnroll}
         isSubmitting={isHrEnrolling}
+        // ✅ FIXED: Explicitly pass down modelsReady to prevent child initialization crashes
+        modelsReady={true}
         onClose={() => toggleModal('hrEnroll', false)}
         onEnroll={async (payload) => {
           try {

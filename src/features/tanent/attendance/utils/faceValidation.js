@@ -86,3 +86,9 @@ export function calculateBrightness(videoElement) {
     return 75; // Return safe standard intermediate baseline if canvas read permissions lock
   }
 }
+
+
+
+
+
+

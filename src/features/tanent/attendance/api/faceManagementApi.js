@@ -34,36 +34,39 @@ export const faceManagementApi = baseApi.injectEndpoints({
       ]
     }),
     rejectFaceEnrollment: builder.mutation({
-      query: ({ id, reason }) => ({
-        url: `/attendance/v1/face-enrollments/${id}/reject/`,
-        method: 'POST',
-        data: { reason }
-      }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'FACE_ENROLLMENTS', id: 'LIST' },
-        { type: 'FACE_ENROLLMENT_DETAIL', id }
-      ]
+    query: ({ id, reason }) => ({
+      url: `/attendance/v1/face-enrollments/${id}/reject/`,
+      method: 'POST',
+      // ✅ FIXED: Changed "data" to "body" for correct RTK Query serialization
+      body: { reason }
+    }),
+    invalidatesTags: (result, error, { id }) => [
+      { type: 'FACE_ENROLLMENTS', id: 'LIST' },
+      { type: 'FACE_ENROLLMENT_DETAIL', id }
+    ]
     }),
     revokeFaceEnrollment: builder.mutation({
     query: ({ id, reason }) => ({
-        url: `/attendance/v1/face-enrollments/${id}/revoke/`,
-        method: 'POST',
-        // ✅ FIXED: Pass the body payload object directly to "data" parameter mapping context
-        data: { reason: reason } 
+      url: `/attendance/v1/face-enrollments/${id}/revoke/`,
+      method: 'POST',
+      // ✅ FIXED: Changed "data" to "body" so RTK Query serializes the JSON payload correctly
+      body: { reason: reason } 
     }),
     invalidatesTags: (result, error, { id }) => [
-        { type: 'FACE_ENROLLMENTS', id: 'LIST' },
-        { type: 'FACE_ENROLLMENT_DETAIL', id }
+      { type: 'FACE_ENROLLMENTS', id: 'LIST' },
+      { type: 'FACE_ENROLLMENT_DETAIL', id }
     ]
-    }),
+  }),
     hrEnrollEmployee: builder.mutation({
-      query: (payload) => ({
-        url: '/attendance/v1/face-enrollments/hr/',
-        method: 'POST',
-        data: payload // payload: { membership_id, embedding }
-      }),
-      invalidatesTags: [{ type: 'FACE_ENROLLMENTS', id: 'LIST' }]
-    })
+    query: (payload) => ({
+      url: '/attendance/v1/face-enrollments/hr/',
+      method: 'POST',
+      // ✅ FIXED: Changed 'data' to 'body' so RTK Query serializes and sends the object keys
+      body: payload // payload: { membership_id, embedding }
+    }),
+    invalidatesTags: [{ type: 'FACE_ENROLLMENTS', id: 'LIST' }]
+  })
+  
   }),
   overrideExisting: false
 });

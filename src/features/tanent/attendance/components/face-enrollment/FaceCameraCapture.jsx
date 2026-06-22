@@ -1,7 +1,3 @@
-// ============================================
-// FaceCameraCapture.jsx — WITH NOD UP/DOWN
-// ============================================
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Sparkles, CheckCircle2, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, RefreshCw, AlertCircle, Loader2, Smile } from 'lucide-react';
 import { useFaceCamera } from '../../hooks/useFaceCamera';
@@ -19,23 +15,46 @@ export function FaceCameraCapture({
   const { videoRef, cameraError, isActive, startCamera, stopCamera } = useFaceCamera();
   const [isWarmingUp, setIsWarmingUp] = useState(true);
   
+  // ✅ FIXED: Defensive Guard layout preventing unmount destructuring crashes during async step transitions
+  if (!challengeEngine) {
+    return (
+      <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col items-center justify-center transition-all duration-300 w-full max-w-sm mx-auto min-h-[380px]">
+        <div className="h-60 w-60 rounded-full border border-slate-100 flex flex-col items-center justify-center bg-slate-50 gap-2 font-bold text-[11px] text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+          <span>Initializing tracking matrices...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Safe to destructure now that context validation checks have resolved cleanly
   const {
-    sequence,
+    sequence = [],
     currentChallenge,
-    currentIndex,
-    isComplete,
-    progress: sequenceProgress,
+    currentIndex = 0,
+    isComplete = false,
+    progress: sequenceProgress = 0,
     moveNext,
-    reset: resetSequence,
   } = challengeEngine;
 
   const handleChallengePassed = useCallback(() => {
-    moveNext();
+    if (!sequence || sequence.length === 0) return;
+    const isFinalChallenge = currentIndex === (sequence.length - 1);
+    
+    if (moveNext) moveNext();
     if (onStepVerified) onStepVerified();
-  }, [moveNext, onStepVerified]);
+
+    if (isFinalChallenge) {
+      console.log("🏁 Final challenge verified successfully. Awaiting data collection event loop.");
+    }
+  }, [moveNext, onStepVerified, currentIndex, sequence]);
 
   const handlePipelineComplete = useCallback((finalDescriptor) => {
-    if (onDescriptorGenerated) onDescriptorGenerated(finalDescriptor);
+    if (onDescriptorGenerated && finalDescriptor) {
+      const standardArray = Array.from(finalDescriptor);
+      console.log("🧬 Vector signature compiled securely: ready to render Commit layout");
+      onDescriptorGenerated(standardArray);
+    }
   }, [onDescriptorGenerated]);
 
   const { 
@@ -44,7 +63,7 @@ export function FaceCameraCapture({
   } = useBlinkLiveness(
     isActive && modelsReady && !isWarmingUp,
     currentChallenge,
-    isComplete,
+    isComplete || (sequence.length > 0 && currentIndex === (sequence.length - 1)),
     videoRef,
     handleChallengePassed,
     handlePipelineComplete
@@ -66,7 +85,7 @@ export function FaceCameraCapture({
 
   const getRingColorStyle = () => {
     if (cameraError) return 'border-red-500 ring-4 ring-red-50';
-    if (isComplete) return 'border-emerald-500 ring-4 ring-emerald-50';
+    if (isComplete) return 'border-emerald-500 ring-4 ring-emerald-50 shadow-[0_0_20px_rgba(16,185,129,0.15)]';
     if (livenessError) return 'border-amber-400 ring-4 ring-amber-50';
     return 'border-indigo-600 ring-4 ring-indigo-50';
   };
