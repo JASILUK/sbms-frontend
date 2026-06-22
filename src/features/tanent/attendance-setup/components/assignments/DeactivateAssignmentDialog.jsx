@@ -1,0 +1,45 @@
+import React from "react";
+import { useDeactivateAssignmentMutation } from "../../api/attendanceSetupApi";
+import { motion, AnimatePresence } from "framer-motion";
+import { PowerOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+export const DeactivateAssignmentDialog = ({ isOpen, onClose, targetId }) => {
+  const [deactivateLink, { isLoading }] = useDeactivateAssignmentMutation();
+
+  const handleCommitAction = async () => {
+    if (!targetId) return;
+    try {
+      await deactivateLink(targetId).unwrap();
+      toast.success("Assignment pipeline broken; record successfully marked inactive.");
+      onClose();
+    } catch {
+      toast.error("Target parameter shift execution rejected.");
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={onClose} />
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="relative z-10 w-full max-w-sm bg-white rounded-xl p-5 border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex gap-3 items-start">
+              <div className="p-2 bg-red-50 text-red-600 rounded-lg border border-red-100 shrink-0"><PowerOff className="h-4 w-4" /></div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Force Deactivate Matrix Link?</h4>
+                <p className="text-xs text-slate-500 mt-1">Danger: This immediately isolates the employee from the designated work shift metrics calculations pipeline. Historical shift processing configurations remain intact.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 text-xs font-semibold pt-1">
+              <button type="button" onClick={onClose} className="px-3 py-1.5 border border-slate-200 bg-white rounded-md text-slate-700 hover:bg-slate-50 cursor-pointer">Abort</button>
+              <button type="button" onClick={handleCommitAction} disabled={isLoading} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 text-white hover:bg-red-500 shadow-xs cursor-pointer">
+                {isLoading && <Loader2 className="h-3 w-3 animate-spin" />} Deactivate Layer
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
