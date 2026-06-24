@@ -8,7 +8,6 @@ import { useTenantContext } from "../../tanatContextHook";
 // Items visible to ALL users with attendance.view
 const commonNavItems = [
   { label: "Dashboard", path: "/app/attendance" },
-  { label: "Check In", path: "/app/attendance/check-in" },
   { label: "Calendar", path: "/app/attendance/calendar" },
   { label: "My Attendance", path: "/app/attendance/my-attendance" },
   { label: "Requests", path: "/app/attendance/requests" },

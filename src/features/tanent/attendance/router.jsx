@@ -4,7 +4,6 @@ import { Route } from "react-router-dom";
 import AttendanceLayout from "./layouts/AttendanceLayout";
 
 import AttendanceDashboardPage from "./pages/AttendanceDashboardPage";
-import CheckInPage from "./pages/CheckInPage";
 import CalendarPage from "./pages/CalendarPage";
 import MyAttendancePage from "./pages/MyAttendancePage";
 import TeamAttendancePage from "./pages/TeamAttendancePage";
@@ -22,7 +21,6 @@ import PermissionGuard from "../../auth/AuthGuard/permissionGuard"; // Adjust ba
 export const attendanceRoutes = (
   <Route path="attendance" element={<AttendanceLayout />}>
     <Route index element={<AttendanceDashboardPage />} />
-    <Route path="check-in" element={<CheckInPage />} />
     <Route path="calendar" element={<CalendarPage />} />
     <Route path="my-attendance" element={<MyAttendancePage />} />
     <Route path="team" element={<TeamAttendancePage />} />

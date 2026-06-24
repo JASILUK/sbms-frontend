@@ -6,18 +6,15 @@ const rawBaseQuery = fetchBaseQuery({
   credentials: "include",
 
   prepareHeaders: (headers) => {
-
     headers.set("Accept", "application/json");
     headers.set("X-Client-Type", "web");
 
     const companyId = localStorage.getItem("activeCompanyId");
-
     if (companyId) {
       headers.set("X-Company-ID", companyId);
     }
 
     const csrfToken = getCookie("csrftoken");
-
     if (csrfToken) {
       headers.set("X-CSRFToken", csrfToken);
     }
@@ -26,13 +23,10 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-
   let result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error?.status === 401) {
-
     const refreshResult = await rawBaseQuery(
       {
         url: "users/v1/auth/refresh/token/",
@@ -45,7 +39,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
     if (refreshResult.data) {
       result = await rawBaseQuery(args, api, extraOptions);
     }
-
   }
 
   if (result.error?.status === 403) {
@@ -60,7 +53,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
   return result;
 };
-
 
 export const baseApi = createApi({
   reducerPath: "api",
@@ -96,12 +88,20 @@ export const baseApi = createApi({
     "Sessions",
     "CalendarAccounts",
 
-    // 🆕 Attendance Setup Domains (Injected from attendance-setup/api/)
+    // Attendance Setup Domains
     "SCHEDULE",
     "POLICY",
     "HOLIDAY",
     "SHIFT",
     "ASSIGNMENT",
+
+    // 🆕 Unified Attendance Tracking & History Cache Tags
+    "AttendanceDashboard",
+    "MyAttendanceList",
+    "MyAttendanceSummary",
+    "MyAttendanceTrends",
+    "MyAttendanceCalendar",
+    "MyAttendanceDetail"
   ],
 
   endpoints: () => ({}),

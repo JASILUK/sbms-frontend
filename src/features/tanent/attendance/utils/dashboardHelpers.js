@@ -25,7 +25,7 @@ export const formatTimeToAmPm = (timeString) => {
   const ampm = hours >= 12 ? 'PM' : 'AM';
   
   hours = hours % 12;
-  hours = hours ? hours : 12; // Converts '0' hours to '12'
+  hours = hours ? hours : 12;
   
   return `${hours}:${minutes} ${ampm}`;
 };
@@ -48,7 +48,7 @@ export const getStatusConfig = (status) => {
       ctaLabel: 'Check In Now',
       actionable: true,
     },
-    CHECKED_IN: {
+    PRESENT: {
       label: 'Active on Duty',
       colorClass: 'bg-indigo-50/40 border-indigo-100 text-indigo-900 ring-indigo-50/50',
       badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200',
