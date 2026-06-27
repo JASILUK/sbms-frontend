@@ -60,7 +60,7 @@ export const attendanceApi = baseApi.injectEndpoints({
       invalidatesTags: ["AttendanceDashboard", "MyAttendanceList", "MyAttendanceSummary", "MyAttendanceCalendar"],
     }),
 
-    // =====================================================
+   // =====================================================
     // 3. EMPLOYEE PORTAL ATTENDANCE HISTORY (QUERIES)
     // =====================================================
     getMyAttendance: builder.query({
@@ -73,18 +73,22 @@ export const attendanceApi = baseApi.injectEndpoints({
     }),
 
     getMyAttendanceSummary: builder.query({
-      query: () => ({
+      query: (params = {}) => ({
         url: "/attendance/v1/my-attendance/summary/",
         method: "GET",
+        params,
       }),
+      // ← FIXED: Add forceRefetch to always refetch when params change
+      forceRefetch({ currentArg, previousArg }) {
+        return JSON.stringify(currentArg) !== JSON.stringify(previousArg);
+      },
       providesTags: ["MyAttendanceSummary"],
     }),
 
     getMyAttendanceTrends: builder.query({
-      query: (params) => ({
+      query: ({ year, limit, offset }) => ({
         url: "/attendance/v1/my-attendance/trends/",
-        method: "GET",
-        params,
+        params: { year, ...(limit && { limit }), ...(offset && { offset }) },
       }),
       providesTags: ["MyAttendanceTrends"],
     }),
@@ -106,20 +110,16 @@ export const attendanceApi = baseApi.injectEndpoints({
       providesTags: (result, error, recordId) => [{ type: "MyAttendanceDetail", id: recordId }],
     }),
   }),
-  overrideExisting: true, // Swapped to true to safely update registration entries within the shared file runtime
+  overrideExisting: true,
 });
 
-// Clean corporate unified structural hooks export block
 export const {
-  // Operational Punch Mutations Hooks
   useVerifyGPSMutation,
   useVerifyFaceMutation,
   useCheckInMutation,
   useCheckOutMutation,
   useBreakOutMutation,
   useBreakInMutation,
-  
-  // Historical Analytics Dashboard Queries Hooks
   useGetMyAttendanceQuery,
   useGetMyAttendanceSummaryQuery,
   useGetMyAttendanceTrendsQuery,

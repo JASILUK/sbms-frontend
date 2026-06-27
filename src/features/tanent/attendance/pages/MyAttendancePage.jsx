@@ -83,6 +83,9 @@ export default function MyAttendancePage() {
     handleApplyFilters,
     handleResetFilters,
     handleRefreshAll,
+    handleYearChange,
+    handleWeeklyNext,
+    handleWeeklyPrev,
   } = useMyAttendance();
 
   return (
@@ -176,7 +179,20 @@ export default function MyAttendancePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {/* Left: Trends + Table */}
               <div className="lg:col-span-2 space-y-6">
-                <AttendanceTrends trends={trendData} />
+                // In the return, update only AttendanceTrends:
+                <AttendanceTrends
+                  trends={trendData}
+                  year={currentYear}
+                  onYearChange={handleYearChange}
+                  onWeeklyNext={handleWeeklyNext}
+                  onWeeklyPrev={handleWeeklyPrev}
+                  weeklyPagination={trendData ? { 
+                    count: trendData.count, 
+                    next: trendData.next, 
+                    previous: trendData.previous 
+                  } : null}
+                />
+
                 <AttendanceListTable
                   records={listData}
                   onOpenDetail={setActiveDrawerId}
@@ -190,7 +206,7 @@ export default function MyAttendancePage() {
                   currentMonth={currentMonth}
                   currentYear={currentYear}
                   onMonthChange={handleMonthChange}
-                  onOpenDetail={setActiveDrawerId}
+                  onOpenDetail={setActiveDrawerId} // This receives date string now
                 />
               </div>
             </div>
