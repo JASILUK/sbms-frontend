@@ -21,7 +21,6 @@ import PermissionGuard from "../../auth/AuthGuard/permissionGuard"; // Adjust ba
 export const attendanceRoutes = (
   <Route path="attendance" element={<AttendanceLayout />}>
     <Route index element={<AttendanceDashboardPage />} />
-    <Route path="calendar" element={<CalendarPage />} />
     <Route path="my-attendance" element={<MyAttendancePage />} />
     <Route path="team" element={<TeamAttendancePage />} />
     <Route path="requests" element={<RequestsPage />} />

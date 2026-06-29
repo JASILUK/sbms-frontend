@@ -8,7 +8,7 @@ import { useTenantContext } from "../../tanatContextHook";
 // Items visible to ALL users with attendance.view
 const commonNavItems = [
   { label: "Dashboard", path: "/app/attendance" },
-  { label: "Calendar", path: "/app/attendance/calendar" },
+  { label: "Leaves", path: "/app/attendance/leaves" },
   { label: "My Attendance", path: "/app/attendance/my-attendance" },
   { label: "Requests", path: "/app/attendance/requests" },
   { label: "Face Enrolment", path: "/app/attendance/face-enrolment" },
@@ -18,7 +18,6 @@ const commonNavItems = [
 // Items visible ONLY to users with attendance.manage permission
 const manageNavItems = [
   { label: "Team", path: "/app/attendance/team" },
-  { label: "Leaves", path: "/app/attendance/leaves" },
   { label: "Reports", path: "/app/attendance/reports" },
   
   // ✅ ENTERPRISE NAVIGATION HOOK ADDITION

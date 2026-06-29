@@ -179,7 +179,6 @@ export default function MyAttendancePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               {/* Left: Trends + Table */}
               <div className="lg:col-span-2 space-y-6">
-                // In the return, update only AttendanceTrends:
                 <AttendanceTrends
                   trends={trendData}
                   year={currentYear}
