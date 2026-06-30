@@ -17,7 +17,7 @@ const commonNavItems = [
 
 // Items visible ONLY to users with attendance.manage permission
 const manageNavItems = [
-  { label: "Team", path: "/app/attendance/team" },
+  { label: "Team Attendance", path: "/app/attendance/hr-management" },
   { label: "Reports", path: "/app/attendance/reports" },
   
   // ✅ ENTERPRISE NAVIGATION HOOK ADDITION
