@@ -1,11 +1,11 @@
 import { baseApi } from "../../../../services/baseApi"; // Adjusted relative lookup depth to fit your feature root
 
 const ENDPOINTS = {
-  DASHBOARD_SUMMARY: "/attendance/v1/attendance-management/dashboard-summary/",
-  COMPANY_LEDGER: "/attendance/v1/attendance-management/company-ledger/",
-  OVERRIDE_PUNCH: "/attendance/v1/attendance-management/override-punch/",
-  RECORD_DETAIL: (id) => `/attendance/v1/attendance-management/records/${id}/`,
-  RECORD_ACTION: (id) => `/attendance/v1/attendance-management/records/${id}/action/`,
+  DASHBOARD_SUMMARY: "/attendance/v1/hr-management/dashboard-summary/",
+  COMPANY_LEDGER: "/attendance/v1/hr-management/company-ledger/",
+  OVERRIDE_PUNCH: "/attendance/v1/hr-management/corrections/manual-punch/",
+  RECORD_DETAIL: (id) => `/attendance/v1/hr-management/records/${id}/`,
+  RECORD_ACTION: (id) => `/attendance/v1/hr-management/records/${id}/action/`,
 };
 
 export const hrAttendanceApi = baseApi.injectEndpoints({
