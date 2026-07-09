@@ -1,37 +1,36 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function ActivityTimeline({ activities = [] }) {
+export const ActivityTimeline = React.memo(({ activities = [] }) => {
   return (
-    <section className="bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl shadow-xs p-5 space-y-4" aria-label="Recent system transaction streams">
-      <h2 className="text-base font-bold text-slate-900 dark:text-white">Latest Activity Logs</h2>
-      
-      {!activities?.length ? (
-        <p className="text-sm text-slate-400 text-center py-4">No events trace signatures detected.</p>
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 w-full">
+      <div>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Streaming Activity Punch Feed</h3>
+        <p className="text-xs text-slate-500 font-semibold mt-0.5">Latest chronological ingestion interactions</p>
+      </div>
+
+      {!activities.length ? (
+        <p className="text-xs text-slate-400 font-mono py-6 text-center">No raw transaction punch flows written today.</p>
       ) : (
-        <div className="flow-root">
+        <div className="flow-root pl-1 max-h-[320px] overflow-y-auto pr-1">
           <ul role="list" className="-mb-8">
-            {activities.map((act, actIdx) => (
-              <li key={act.id || actIdx}>
-                <div className="relative pb-5">
-                  {actIdx !== activities.length - 1 ? (
-                    <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-100 dark:bg-slate-900" aria-hidden="true" />
-                  ) : null}
-                  <div className="relative flex space-x-3">
-                    <div>
-                      <span className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center ring-8 ring-white dark:ring-slate-950 text-xs font-mono font-bold text-slate-500">
-                        {act.event_type?.charAt(0) || 'E'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
+            {activities.map((act, idx) => (
+              <li key={act.id || idx}>
+                <div className="relative pb-6">
+                  {idx !== activities.length - 1 && (
+                    <span className="absolute top-4 left-3 -ml-px h-full w-0.5 bg-slate-100" aria-hidden="true" />
+                  )}
+                  <div className="relative flex space-x-3 text-xs">
+                    <span className="h-6 w-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center font-mono font-black text-[9px] text-slate-400 shadow-xs shrink-0">
+                      {act.event?.charAt(0) || "P"}
+                    </span>
+                    <div className="flex-1 min-w-0 pt-0.5 flex justify-between space-x-4">
                       <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{act.employee_name}</p>
-                        <p className="text-xs text-slate-400 font-mono uppercase tracking-wider">{act.event_type} • {act.source}</p>
+                        <p className="font-bold text-slate-800">{act.employee_name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{act.event} • Channel: {act.method}</p>
                       </div>
-                      <div className="text-right whitespace-nowrap text-xs text-slate-400 font-mono">
-                        <time dateTime={act.timestamp}>
-                          {new Date(act.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </time>
+                      <div className="text-right whitespace-nowrap text-[10px] text-indigo-600 font-mono font-bold">
+                        {act.time ? new Date(act.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                       </div>
                     </div>
                   </div>
@@ -41,10 +40,11 @@ export default function ActivityTimeline({ activities = [] }) {
           </ul>
         </div>
       )}
-    </section>
+    </div>
   );
-}
+});
 
+ActivityTimeline.displayName = "ActivityTimeline";
 ActivityTimeline.propTypes = {
   activities: PropTypes.array,
 };

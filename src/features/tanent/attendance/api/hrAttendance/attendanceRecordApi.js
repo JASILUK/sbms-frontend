@@ -1,34 +1,60 @@
-import { baseApi } from "../../../../../services/baseApi"; // Absolute context mapping fallback
+import { baseApi } from "../../../../../services/baseApi";
 
 export const attendanceRecordApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAttendanceRecordDetail: builder.query({
+    getComprehensiveRecordGraph: builder.query({
       query: (recordId) => ({
-        url: `/attendance/v1/hr/records/${recordId}/`,
-        method: 'GET',
+        url: `/attendance/v1/hr-management/records/${recordId}/`,
+        method: "GET",
       }),
-      providesTags: (result, error, recordId) => [{ type: 'HR_Record_Detail', id: recordId }],
+      providesTags: (result, error, recordId) => [
+        { type: "HR_Record_Detail", id: recordId },
+      ],
     }),
-    getAttendanceRecordTimeline: builder.query({
-      query: (recordId) => ({
-        url: `/attendance/v1/hr/records/${recordId}/timeline/`,
-        method: 'GET',
+    
+    finalizeRecord: builder.mutation({
+      query: ({ recordId, reason }) => ({
+        url: `/attendance/v1/hr-management/records/${recordId}/actions/finalize/`,
+        method: "POST",
+        body: { reason },
       }),
-      providesTags: (result, error, recordId) => [{ type: 'HR_Record_Timeline', id: recordId }],
+      invalidatesTags: (result, error, { recordId }) => [{ type: "HR_Record_Detail", id: recordId }],
     }),
-    getAttendanceRecordAuditHistory: builder.query({
-      query: (recordId) => ({
-        url: `/attendance/v1/hr/records/${recordId}/audit-history/`,
-        method: 'GET',
+
+    unlockRecord: builder.mutation({
+      query: ({ recordId, reason }) => ({
+        url: `/attendance/v1/hr-management/records/${recordId}/actions/unlock/`,
+        method: "POST",
+        body: { reason },
       }),
-      providesTags: (result, error, recordId) => [{ type: 'HR_Record_Audit', id: recordId }],
+      invalidatesTags: (result, error, { recordId }) => [{ type: "HR_Record_Detail", id: recordId }],
+    }),
+
+    reprocessTimeline: builder.mutation({
+      query: ({ recordId, reason }) => ({
+        url: `/attendance/v1/hr-management/records/${recordId}/actions/reprocess/`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: (result, error, { recordId }) => [{ type: "HR_Record_Detail", id: recordId }],
+    }),
+
+    recalculateAttendance: builder.mutation({
+      query: ({ recordId, reason }) => ({
+        url: `/attendance/v1/hr-management/records/${recordId}/actions/recalculate/`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: (result, error, { recordId }) => [{ type: "HR_Record_Detail", id: recordId }],
     }),
   }),
   overrideExisting: true,
 });
 
 export const {
-  useGetAttendanceRecordDetailQuery,
-  useGetAttendanceRecordTimelineQuery,
-  useGetAttendanceRecordAuditHistoryQuery,
+  useGetComprehensiveRecordGraphQuery,
+  useFinalizeRecordMutation,
+  useUnlockRecordMutation,
+  useReprocessTimelineMutation,
+  useRecalculateAttendanceMutation,
 } = attendanceRecordApi;

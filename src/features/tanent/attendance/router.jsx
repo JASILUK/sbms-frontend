@@ -1,5 +1,5 @@
 import React from "react";
-import { Route } from "react-router-dom";
+import { Route } from "react-router-dom";  
 
 import AttendanceLayout from "./layouts/AttendanceLayout";
 
@@ -15,19 +15,22 @@ import ReportsPage from "./pages/ReportsPage";
 import FaceEnrollmentPage from "./pages/FaceEnrollmentPage";
 import FaceEnrollmentManagementPage from "./pages/FaceEnrollmentManagementPage";
 
-// 🆕 Refactored Enterprise HR Attendance Management Page Layers
+// Refactored Enterprise HR Attendance Management Page Layers
 import HRDashboardPage from "./pages/hrManagement/HRDashboardPage";
-import HRAttendanceRecordDetailPage from "./pages/HRAttendanceRecordDetailPage";
+import HREmployeeDirectoryPage from "./pages/hrManagement/HREmployeeDirectoryPage";
+import HREmployeeProfilePage from "./pages/hrManagement/HREmployeeProfilePage";
+import HREmployeeAttendanceRecordDetailPage from "./pages/hrManagement/HRAttendanceRecordDetailPage";
+
+// 🆕 Step 1: Ingest Newly Provisioned Review Queue Page Interface Root Node
+import HRReviewQueuePage from "./pages/hrManagement/HRReviewQueuePage";
 
 // Security Framework Components
 import PermissionGuard from "../../auth/AuthGuard/permissionGuard"; 
-import HREmployeeDirectoryPage from "./pages/hrManagement/HREmployeeDirectoryPage";
-import HREmployeeProfilePage from "./pages/hrManagement/HREmployeeProfilePage";
 
 export const attendanceRoutes = (
   <Route path="attendance" element={<AttendanceLayout />}>
     {/* ========================================================
-        1. EMPLOYEE SELF-SERVICE ATTENDANCE PATHWAYS (PUBLIC/AUTHENTICATED)
+        1. EMPLOYEE PORTAL SELF-SERVICE CONSOLES
         ======================================================== */}
     <Route index element={<AttendanceDashboardPage />} />
     <Route path="my-attendance" element={<MyAttendancePage />} />
@@ -35,16 +38,11 @@ export const attendanceRoutes = (
     <Route path="requests" element={<RequestsPage />} />
     <Route path="leaves" element={<LeavesPage />} />
     <Route path="reports" element={<ReportsPage />} />
-
-    {/* Employee Self-Service Biometric Face Registration */}
     <Route path="face-enrolment" element={<FaceEnrollmentPage />} />
 
-
     {/* ========================================================
-        2. ENTERPRISE HR ADMINISTRATIVE WORKSPACE CONSOLES
+        2. ENTERPRISE HR ADMINISTRATIVE WORKSPACE WORKBOOKS CONSOLES
         ======================================================== */}
-        
-    {/* HR Corporate Biometric Profile Management Console */}
     <Route
       path="face-management"
       element = {
@@ -54,7 +52,6 @@ export const attendanceRoutes = (
       }
     />
 
-    {/* HR Admin Attendance Dashboard (Accessible by any user with a view or manage role) */}
     <Route
       path="hr/dashboard"
       element = {
@@ -63,17 +60,6 @@ export const attendanceRoutes = (
         </PermissionGuard>
       }
     />
-
-    {/* Shared Deep-Link Timeline Audit Detail Graph Page */}
-    <Route
-      path="hr/records/:record_id"
-      element = {
-        <PermissionGuard permission="tenant.attendance.manage">
-          <HRAttendanceRecordDetailPage />
-        </PermissionGuard>
-      }
-    />
-
 
     <Route
       path="hr/directory"
@@ -85,12 +71,31 @@ export const attendanceRoutes = (
     />
 
     <Route
-    path="hr/profile/:membership_id"
-    element={
-      <PermissionGuard permission="tenant.attendance.manage">
-        <HREmployeeProfilePage />
-      </PermissionGuard>
-    }
+      path="hr/profile/:membership_id"
+      element={
+        <PermissionGuard permission="tenant.attendance.manage">
+          <HREmployeeProfilePage />
+        </PermissionGuard>
+      }
+    />
+
+    <Route
+      path="hr/records/:record_id"
+      element={
+        <PermissionGuard permission="tenant.attendance.view">
+          <HREmployeeAttendanceRecordDetailPage />
+        </PermissionGuard>
+      }
+    />
+
+    {/* 🆕 Step 2: Bind Targeted Route Endpoint Pattern to Guard Wrapper */}
+    <Route
+      path="hr/review-queue"
+      element={
+        <PermissionGuard permission="tenant.attendance.manage">
+          <HRReviewQueuePage />
+        </PermissionGuard>
+      }
     />
     
   </Route>

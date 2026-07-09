@@ -1,121 +1,196 @@
-// attendance/pages/hrManagement/HRDashboardPage.jsx
-import React, { useMemo } from 'react';
+// # attendance/pages/hrManagement/HRDashboardPage.jsx (COMPLETE REPLACEMENT)
+
+import React, { useMemo, useCallback } from 'react';
 import PageContainer from '../../components/hrManagement/shared/PageContainer';
 import PermissionWrapper from '../../components/hrManagement/shared/PermissionWrapper';
-import SkeletonLoader from '../../components/hrManagement/shared/SkeletonLoader';
-import { useAttendanceFilters } from '../../hooks/hrAttendance/useAttendanceFilters';
 import { useAttendancePermissions } from '../../hooks/hrAttendance/useAttendancePermissions';
-import {
-  useGetHRDashboardSummaryQuery,
-  useGetHRLiveAttendanceStreamQuery
-} from '../../api/hrAttendance/dashboardApi';
+import { useGetHRDashboardSummaryQuery } from '../../api/hrAttendance/dashboardApi';
+import { useGetLiveWorkforceQuery } from '../../api/hrAttendance/liveWorkforceApi';
+import { useLiveWorkforceFilters } from '../../hooks/hrAttendance/useLiveWorkforceFilters';
 
-import DashboardHeader from '../../components/hrManagement/dashboard/DashboardHeader';
-import DashboardToolbar from '../../components/hrManagement/dashboard/DashboardToolbar';
-import SummaryGrid from '../../components/hrManagement/dashboard/SummaryGrid';
-import DepartmentSection from '../../components/hrManagement/dashboard/DepartmentSection';
-import LiveStatusGrid from '../../components/hrManagement/dashboard/LiveStatusGrid';
-import ActivityTimeline from '../../components/hrManagement/dashboard/ActivityTimeline';
-import AlertPanel from '../../components/hrManagement/dashboard/AlertPanel';
-import QuickActions from '../../components/hrManagement/dashboard/QuickActions';
+// Components
+import DashboardSkeleton from '../../components/hrManagement/dashboard/DashboardSkeleton';
+import { DashboardHeader } from '../../components/hrManagement/dashboard/DashboardHeader';
+import { DashboardSummaryCards } from '../../components/hrManagement/dashboard/DashboardSummaryCards';
+import { WorkforceDoughnutChart } from '../../components/hrManagement/dashboard/WorkforceDoughnutChart';
+import { ShiftDistributionCards } from '../../components/hrManagement/dashboard/ShiftDistributionCards';
+import { DepartmentPerformanceTable } from '../../components/hrManagement/dashboard/DepartmentPerformanceTable';
+import { LiveWorkforceTable } from '../../components/hrManagement/dashboard/LiveWorkforceTable';
+import { LiveWorkforceToolbar } from '../../components/hrManagement/dashboard/LiveWorkforceToolbar';
+import { ActivityTimeline } from '../../components/hrManagement/dashboard/ActivityTimeline';
+import { QuickActions } from '../../components/hrManagement/dashboard/QuickActions';
+import { DashboardCardsSkeleton } from '../../components/hrManagement/dashboard/DashboardCardsSkeleton';
+import { DashboardChartsSkeleton } from '../../components/hrManagement/dashboard/DashboardChartsSkeleton';
+import { ShiftDistributionChart } from '../../components/hrManagement/dashboard/ShiftDistributionChart';
 
+/**
+ * HRDashboardPage - Premium operational dashboard.
+ * Integrates Dashboard Summary API + Live Workforce API.
+ */
 export default function HRDashboardPage() {
   const perms = useAttendancePermissions();
-  const { filters, searchVal, updateFilter, clearFilters, handleSearchChange } = useAttendanceFilters();
 
-  const todayStr = useMemo(() => filters.date_from || new Date().toISOString().split('T')[0], [filters.date_from]);
+  // ── Dashboard Summary Query ─────────────────────────────────────────
+  const targetDateStr = useMemo(() => {
+    return new Date().toISOString().split('T')[0];
+  }, []);
 
-  const queryParams = useMemo(() => ({
-    date: todayStr,
-    date_from: todayStr, // Aligned for ledger parameter expectations[cite: 1, 2]
-    date_to: todayStr,
-    department_id: filters.department || undefined,
-    search: filters.search || undefined
-  }), [todayStr, filters.department, filters.search]);
+  const dashboardParams = useMemo(() => ({ date: targetDateStr }), [targetDateStr]);
 
-  // Query 1: Dashboard metrics and counters[cite: 1, 2]
   const {
-    data: summaryRes,
-    isLoading: isSummaryLoading,
-    isFetching: isSummaryFetching,
-    refetch: refetchSummary,
-    isError: isSummaryError
-  } = useGetHRDashboardSummaryQuery(queryParams, { skip: !perms.canViewDashboard });
+    data: dashboardResponse,
+    isLoading: dashboardLoading,
+    isFetching: dashboardFetching,
+    refetch: refetchDashboard,
+    isError: dashboardError,
+  } = useGetHRDashboardSummaryQuery(dashboardParams, { skip: !perms.canViewDashboard });
 
-  // Query 2: Reuses the ledger dataset for real-time overview metrics[cite: 1, 2]
+  const dashboardData = dashboardResponse?.data || dashboardResponse;
+
+  // ── Live Workforce Filters & Query ────────────────────────────────────
   const {
-    data: liveLedgerRes,
-    isLoading: isLiveLoading,
-    refetch: refetchLive
-  } = useGetHRLiveAttendanceStreamQuery(queryParams, { skip: !perms.canViewDashboard });
+    filters,
+    searchVal,
+    updateFilter,
+    setStatusFilter,
+    setNeedsReview,
+    clearFilters,
+    handleSearchChange,
+    setPage,
+    setOrdering,
+  } = useLiveWorkforceFilters({ date: targetDateStr });
 
-  const handleRefreshAll = React.useCallback(() => {
-    refetchSummary();
-    refetchLive();
-  }, [refetchSummary, refetchLive]);
+  const {
+    data: workforceResponse,
+    isLoading: workforceLoading,
+    isFetching: workforceFetching,
+    refetch: refetchWorkforce,
+    isError: workforceError,
+  } = useGetLiveWorkforceQuery(filters, { skip: !perms.canViewDashboard });
 
-  // Client-side computation filter to extract only employees currently clocked in[cite: 1, 2]
-  const liveWorkingWorkforce = useMemo(() => {
-    const records = liveLedgerRes?.data?.results || liveLedgerRes?.results || [];
-    return records.filter(record => record.clock_in && !record.clock_out); // Checked in but has not checked out[cite: 1, 2]
-  }, [liveLedgerRes]);
+  const workforceData = workforceResponse?.data || workforceResponse;
+  const workforceRows = workforceData?.results || [];
+  const workforceSummary = workforceData?.summary || {};
+  const workforceMeta = workforceData?.filter_metadata || {};
+  const workforcePagination = workforceData?.pagination || {};
 
-  const isInitialLayoutLoading = isSummaryLoading || isLiveLoading;
+  // ── Card Click Handler ───────────────────────────────────────────────
+  const handleCardClick = useCallback((statusKey) => {
+    if (statusKey === 'REVIEW_REQUIRED') {
+      setNeedsReview('true');
+    } else {
+      setStatusFilter(statusKey);
+    }
+  }, [setStatusFilter, setNeedsReview]);
 
-  if (isSummaryError) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center" role="alert">
-          <p className="text-sm font-medium text-rose-600 dark:text-rose-400">Failed to load the operational data dashboard.</p>
-          <button type="button" onClick={handleRefreshAll} className="mt-4 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-xl">
-            Retry Synchronization
-          </button>
-        </div>
-      </PageContainer>
-    );
-  }
+  // ── Shift Card Click Handler ───────────────────────────────────────
+  const handleShiftClick = useCallback((shiftId) => {
+    updateFilter('shift', filters.shift === String(shiftId) ? '' : String(shiftId));
+  }, [updateFilter, filters.shift]);
 
-  const dashboardData = summaryRes?.data || summaryRes;
+  // ── Refresh All ─────────────────────────────────────────────────────
+  const handleRefreshAll = useCallback(() => {
+    refetchDashboard();
+    refetchWorkforce();
+  }, [refetchDashboard, refetchWorkforce]);
 
   return (
     <PermissionWrapper requiredPermission="canViewDashboard">
       <PageContainer>
-        <DashboardHeader 
-          onRefresh={handleRefreshAll} 
-          isFetching={isSummaryFetching} 
-          lastUpdated={dashboardData?.summary_date}
-        />
-        
-        <DashboardToolbar 
-          filters={filters}
-          searchVal={searchVal}
-          onFilterChange={updateFilter}
-          onSearchChange={handleSearchChange}
-          onClear={clearFilters}
-        />
+        <div className="space-y-6 w-full max-w-7xl mx-auto pb-12 animate-fade-in">
 
-        {isInitialLayoutLoading ? (
-          <div className="space-y-6">
-            <SkeletonLoader variant="card" count={4} />
-            <SkeletonLoader variant="table" count={3} />
+          <DashboardHeader
+            metadata={dashboardData?.metadata}
+            onRefresh={handleRefreshAll}
+            isFetching={dashboardFetching || workforceFetching}
+          />
+
+          {/* ── Summary KPI Cards ───────────────────────────────────── */}
+          {dashboardLoading ? (
+            <DashboardCardsSkeleton />
+          ) : dashboardError ? (
+            <div className="bg-white border border-dashed border-rose-200 rounded-2xl p-8 text-center">
+              <p className="text-sm font-bold text-rose-600 mb-4">Dashboard data unavailable.</p>
+              <button
+                type="button"
+                onClick={refetchDashboard}
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <DashboardSummaryCards
+              summary={dashboardData?.summary}
+              onCardClick={handleCardClick}
+              activeStatus={filters.status}
+              activeNeedsReview={filters.needs_review}
+            />
+          )}
+
+          {/* ── Charts Row ────────────────────────────────────────────── */}
+          {dashboardLoading ? (
+            <DashboardChartsSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <WorkforceDoughnutChart
+                summary={workforceSummary}
+              />
+              <ShiftDistributionChart
+                shifts={dashboardData?.shift_distribution}
+                activeShift={filters.shift ? parseInt(filters.shift, 10) : null}
+                onShiftClick={handleShiftClick}
+              />
+            </div>
+          )}
+
+          {/* ── Department Performance ────────────────────────────────── */}
+          <DepartmentPerformanceTable
+            departments={dashboardData?.departments}
+          />
+
+          {/* ── Live Workforce Section ──────────────────────────────── */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Live Workforce</h2>
+              <span className="text-xs font-medium text-slate-500">
+                {workforceFetching && !workforceLoading ? 'Refreshing...' : ''}
+              </span>
+            </div>
+
+            <LiveWorkforceToolbar
+              filters={filters}
+              searchVal={searchVal}
+              filterMetadata={workforceMeta}
+              onSearchChange={handleSearchChange}
+              onFilterChange={updateFilter}
+              onClear={clearFilters}
+              isLoading={workforceLoading}
+            />
+
+            <LiveWorkforceTable
+              employees={workforceRows}
+              isLoading={workforceLoading}
+              isError={workforceError}
+              onRetry={refetchWorkforce}
+              pagination={workforcePagination}
+              onPageChange={setPage}
+              filters={filters}
+              onOrderingChange={setOrdering}
+            />
           </div>
-        ) : (
-          <div className="space-y-6 animate-fade-in">
-            <SummaryGrid metrics={dashboardData?.statistics} />
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-              <div className="xl:col-span-2 space-y-6">
-                <DepartmentSection departments={dashboardData?.department_breakdown || []} />
-                <LiveStatusGrid workforce={liveWorkingWorkforce} />
-              </div>
-              <div className="space-y-6">
-                <AlertPanel alerts={dashboardData?.alerts || []} />
-                <ActivityTimeline activities={dashboardData?.recent_activity || []} />
-                <QuickActions />
-              </div>
+
+          {/* ── Activity + Quick Actions ────────────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+            <div className="xl:col-span-2">
+              <ActivityTimeline activities={dashboardData?.activity_feed} />
+            </div>
+            <div>
+              <QuickActions />
             </div>
           </div>
-        )}
+
+        </div>
       </PageContainer>
     </PermissionWrapper>
   );
