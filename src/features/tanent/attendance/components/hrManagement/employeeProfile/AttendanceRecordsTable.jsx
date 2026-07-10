@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { HR_ROUTES, ATTENDANCE_THEME } from "../../../constants/hrAttendance";
+import { HR_ROUTES, ATTENDANCE_THEME } from "../../../constants/hrAttendance"
 
 const ProfileTableRow = memo(({ record }) => {
   const theme = ATTENDANCE_THEME[record.attendance_status] || { color: "text-slate-600", bg: "bg-slate-50" };

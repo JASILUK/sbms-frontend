@@ -23,17 +23,22 @@ const StatusBadge = ({ status }) => {
 StatusBadge.propTypes = { status: PropTypes.string.isRequired };
 
 // ─── Shift Row ────────────────────────────────────────────────
-const ShiftRow = React.memo(({ shift, index }) => {
-  const total = shift.employees_count || 1;
+const ShiftRow = React.memo(({ shift }) => {
+  const total = shift.employees_count || 0;
   const active = (shift.working_count || 0) + (shift.checked_out_count || 0);
-  const progressPct = Math.min(100, (active / total) * 100);
-  const absentPct = Math.min(100, ((shift.absent_count || 0) / total) * 100);
+  
+  // Calculate percentages safely handling division by zero
+  const progressPct = total > 0 ? Math.min(100, (active / total) * 100) : 0;
+  const absentPct = total > 0 ? Math.min(100, ((shift.absent_count || 0) / total) * 100) : 0;
+  const leavePct = total > 0 ? Math.min(100, ((shift.leave_count || 0) / total) * 100) : 0;
 
-  // Determine status
+  // Determine status thresholds
   let status = 'Healthy';
-  if ((shift.absent_count || 0) > total * 0.15) status = 'Critical';
-  else if ((shift.late_count || 0) > total * 0.1) status = 'Warning';
-  else if (progressPct < 70) status = 'Low Coverage';
+  if (total > 0) {
+    if ((shift.absent_count || 0) > total * 0.15) status = 'Critical';
+    else if ((shift.late_count || 0) > total * 0.1) status = 'Warning';
+    else if (progressPct < 70 && total > (shift.leave_count || 0)) status = 'Low Coverage';
+  }
 
   return (
     <div className="group relative rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50/80 transition-all duration-200 cursor-default p-3 -mx-1">
@@ -61,39 +66,52 @@ const ShiftRow = React.memo(({ shift, index }) => {
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Segmented Progress Bar */}
       <div className="relative w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/40">
-        <div className="absolute top-0 left-0 h-full rounded-full transition-all duration-700 ease-out group-hover:brightness-110"
+        {/* Active Working Stack */}
+        <div className="absolute top-0 left-0 h-full rounded-l-full transition-all duration-700 ease-out group-hover:brightness-110"
              style={{ 
                width: `${progressPct}%`, 
                background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)' 
              }}>
           <div className="absolute inset-0 bg-white/20 animate-shimmer" />
         </div>
+        {/* Leave Segment */}
+        {leavePct > 0 && (
+          <div className="absolute top-0 h-full bg-sky-400/60 transition-all duration-700" 
+               style={{ left: `${progressPct}%`, width: `${leavePct}%` }} />
+        )}
+        {/* Absent Segment */}
         {absentPct > 0 && (
-          <div className="absolute top-0 h-full bg-rose-400/40 rounded-r-full transition-all duration-700" 
-               style={{ left: `${progressPct}%`, width: `${absentPct}%` }} />
+          <div className="absolute top-0 h-full bg-rose-400/50 rounded-r-full transition-all duration-700" 
+               style={{ left: `${progressPct + leavePct}%`, width: `${absentPct}%` }} />
         )}
       </div>
 
-      {/* Metrics */}
+      {/* Metrics Row */}
       <div className="flex justify-between mt-2 text-[11px]">
         <div className="flex gap-3">
           <span className="flex items-center gap-1 text-slate-400 group-hover:text-amber-600 transition-colors">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            Late: <span className="font-mono font-semibold tabular-nums">{shift.late_count || 0}</span>
+            Late: <span className="font-mono font-semibold text-slate-600 group-hover:text-amber-600 tabular-nums">{shift.late_count || 0}</span>
+          </span>
+          <span className="flex items-center gap-1 text-slate-400 group-hover:text-sky-600 transition-colors">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Leave: <span className="font-mono font-semibold text-slate-600 group-hover:text-sky-600 tabular-nums">{shift.leave_count || 0}</span>
           </span>
           <span className="flex items-center gap-1 text-slate-400 group-hover:text-rose-500 transition-colors">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
             </svg>
-            Absent: <span className="font-mono font-semibold tabular-nums">{shift.absent_count || 0}</span>
+            Absent: <span className="font-mono font-semibold text-slate-600 group-hover:text-rose-600 tabular-nums">{shift.absent_count || 0}</span>
           </span>
         </div>
-        <span className="text-slate-300 group-hover:text-indigo-400 transition-colors">
-          Checked out: <span className="font-mono font-semibold tabular-nums text-slate-500">{shift.checked_out_count || 0}</span>
+        <span className="text-slate-400 group-hover:text-indigo-400 transition-colors">
+          Out: <span className="font-mono font-semibold tabular-nums text-slate-500">{shift.checked_out_count || 0}</span>
         </span>
       </div>
 
@@ -121,6 +139,10 @@ const ShiftRow = React.memo(({ shift, index }) => {
             <span className="font-mono font-semibold text-amber-600">{shift.late_count || 0}</span>
           </div>
           <div className="flex justify-between text-[11px]">
+            <span className="text-sky-600">On Leave</span>
+            <span className="font-mono font-semibold text-sky-600">{shift.leave_count || 0}</span>
+          </div>
+          <div className="flex justify-between text-[11px]">
             <span className="text-rose-500">Absent</span>
             <span className="font-mono font-semibold text-rose-500">{shift.absent_count || 0}</span>
           </div>
@@ -144,8 +166,9 @@ export const ShiftDistributionChart = React.memo(({ shifts = [], lastUpdated }) 
     const totalEmployees = shifts.reduce((s, sh) => s + (sh.employees_count || 0), 0);
     const totalActive = shifts.reduce((s, sh) => s + (sh.working_count || 0) + (sh.checked_out_count || 0), 0);
     const totalLate = shifts.reduce((s, sh) => s + (sh.late_count || 0), 0);
+    const totalLeave = shifts.reduce((s, sh) => s + (sh.leave_count || 0), 0);
     const totalAbsent = shifts.reduce((s, sh) => s + (sh.absent_count || 0), 0);
-    return { totalShifts, totalEmployees, totalActive, totalLate, totalAbsent };
+    return { totalShifts, totalEmployees, totalActive, totalLate, totalLeave, totalAbsent };
   }, [shifts]);
 
   if (!shifts.length) {
@@ -164,7 +187,7 @@ export const ShiftDistributionChart = React.memo(({ shifts = [], lastUpdated }) 
     );
   }
 
-  const { totalShifts, totalEmployees, totalActive, totalLate, totalAbsent } = totals;
+  const { totalShifts, totalEmployees, totalActive, totalLate, totalLeave, totalAbsent } = totals;
   const coveragePct = totalEmployees > 0 ? Math.round((totalActive / totalEmployees) * 100) : 0;
 
   return (
@@ -196,12 +219,18 @@ export const ShiftDistributionChart = React.memo(({ shifts = [], lastUpdated }) 
         </div>
 
         {/* Summary Chips */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex flex-wrap gap-2 mt-3">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 border border-amber-200/60 text-[10px] font-semibold text-amber-700">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01"/>
             </svg>
             {totalLate} Late
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-sky-50 border border-sky-200/60 text-[10px] font-semibold text-sky-700">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            {totalLeave} Leave
           </span>
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 border border-rose-200/60 text-[10px] font-semibold text-rose-700">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +247,7 @@ export const ShiftDistributionChart = React.memo(({ shifts = [], lastUpdated }) 
         </div>
       </div>
 
-      {/* Shift List */}
+      {/* Shift List Container */}
       <div className="px-5 py-3 max-h-[320px] overflow-y-auto scrollbar-thin">
         <div className="space-y-1">
           {shifts.map((shift, idx) => (
@@ -247,6 +276,7 @@ ShiftDistributionChart.propTypes = {
     working_count: PropTypes.number,
     checked_out_count: PropTypes.number,
     late_count: PropTypes.number,
+    leave_count: PropTypes.number,
     absent_count: PropTypes.number,
   })),
   lastUpdated: PropTypes.string,

@@ -10,13 +10,13 @@ export const LiveWorkforceRow = React.memo(({ employee }) => {
   const navigate = useNavigate();
 
   const handleRowClick = () => {
-    navigate(`/attendance/hr/profile/${employee.membership_id}`);
+    navigate(`/app/attendance/hr/profile/${employee.membership_id}`);
   };
 
   const handleDetailClick = (e) => {
     e.stopPropagation();
     if (employee.attendance_record_id) {
-      navigate(`/attendance/hr/records/${employee.attendance_record_id}`);
+      navigate(`/app/attendance/hr/records/${employee.attendance_record_id}`);
     }
   };
 

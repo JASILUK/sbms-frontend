@@ -1,25 +1,34 @@
-import React, { useMemo, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import React, { useMemo, useCallback, Suspense } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, RefreshCw } from "lucide-react";
+
 import PageContainer from "../../components/hrManagement/shared/PageContainer";
 import PermissionWrapper from "../../components/hrManagement/shared/PermissionWrapper";
-import SkeletonLoader from "../../components/hrManagement/shared/SkeletonLoader";
 import { useProfileQueryFilters } from "../../hooks/hrAttendance/useProfileQueryFilters";
 import { useGetEmployeeAttendanceProfileDetailQuery } from "../../api/hrAttendance/employeeProfileApi";
 import { serializeFilters } from "../../utils/hrAttendance";
+import { HR_ROUTES } from "../../constants/hrAttendance";
 
 import EmployeeProfileHeader from "../../components/hrManagement/employeeProfile/EmployeeProfileHeader";
-import EmployeeIdentityCard from "../../components/hrManagement/employeeProfile/EmployeeIdentityCard";
-import AttendanceSummaryCards from "../../components/hrManagement/employeeProfile/AttendanceSummaryCards";
-import AttendanceCalendar from "../../components/hrManagement/employeeProfile/AttendanceCalendar";
-import AttendanceRecordsTable from "../../components/hrManagement/employeeProfile/AttendanceRecordsTable";
+import AttendanceSummaryGrid from "../../components/hrManagement/employeeProfile/AttendanceSummaryGrid";
+import AttendanceChartsSection from "../../components/hrManagement/employeeProfile/AttendanceChartsSection";
+import AttendanceRecordsSection from "../../components/hrManagement/employeeProfile/AttendanceRecordsSection";
+import ProfileLoadingSkeleton from "../../components/hrManagement/employeeProfile/ProfileLoadingSkeleton";
+import ProfileErrorState from "../../components/hrManagement/employeeProfile/ProfileErrorState";
+import EmptyAttendanceState from "../../components/hrManagement/employeeProfile/EmptyAttendanceState";
 
 /**
- * HREmployeeProfilePage - Acts as the primary personal auditing workspace panel for a single user.
- * Manages parametric date ranges and server-side limit-offset pagination configurations.
+ * HREmployeeProfilePage — Premium Enterprise HR Attendance Workspace
+ *
+ * Architecture:
+ *   Page → Header → Summary Grid → Charts Section → Records Section
+ *
+ * Navigation: Dashboard → Live Workforce → Employee Profile → Record Detail
  */
 export default function HREmployeeProfilePage() {
   const { membership_id } = useParams();
-  const { filters, updateFilters } = useProfileQueryFilters();
+  const navigate = useNavigate();
+  const { filters, updateFilters, resetFilters } = useProfileQueryFilters();
 
   const serializedQueryParams = useMemo(() => {
     return serializeFilters({
@@ -28,90 +37,119 @@ export default function HREmployeeProfilePage() {
     });
   }, [filters, membership_id]);
 
-  // Combined single query data transfer profile execution boundary check
   const {
     data: profileResponse,
-    isLoading: isProfileLoading,
-    isFetching: isProfileFetching,
-    refetch: refetchProfileDetail,
-    isError: isProfileError,
-  } = useGetEmployeeAttendanceProfileDetailQuery(serializedQueryParams, { skip: !membership_id });
+    isLoading,
+    isFetching,
+    refetch,
+    isError,
+  } = useGetEmployeeAttendanceProfileDetailQuery(serializedQueryParams, {
+    skip: !membership_id,
+    refetchOnMountOrArgChange: true,
+  });
 
-  const handleRefreshAll = useCallback(() => {
-    refetchProfileDetail();
-  }, [refetchProfileDetail]);
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-  const handlePageChange = useCallback((newOffset) => {
-    updateFilters({ offset: newOffset });
-  }, [updateFilters]);
+  const handlePageChange = useCallback(
+    (newOffset) => {
+      updateFilters({ offset: newOffset });
+    },
+    [updateFilters]
+  );
 
-  if (isProfileError) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-[400px] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center" role="alert">
-          <p className="text-sm font-medium text-rose-600 dark:text-rose-400">Failed to load the single employee analytics graph data lines.</p>
-          <button type="button" onClick={handleRefreshAll} className="mt-4 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-xl transition-colors">
-            Retry Synchronize
-          </button>
-        </div>
-      </PageContainer>
-    );
-  }
+  const handleNavigateBack = useCallback(() => {
+    navigate(HR_ROUTES.DASHBOARD);
+  }, [navigate]);
 
-  // Safely extract properties out of your custom backend standard ApiResponse data envelope
-  const profileGraph = profileResponse?.data || profileResponse;
-  
-  const recordsList = profileGraph?.records?.results || profileGraph?.records || [];
-  const totalRecordsCount = profileGraph?.records?.pagination?.count || profileGraph?.records?.meta?.pagination?.count || 0;
+  const handleRecordClick = useCallback(
+    (recordId) => {
+      navigate(`/app/attendance/hr/records/${recordId}`);
+    },
+    [navigate]
+  );
+
+  // Extract data from ApiResponse envelope
+  const profileData = profileResponse?.data || profileResponse;
+  const employee = profileData?.employee;
+  const summary = profileData?.summary;
+  const charts = profileData?.charts;
+  const records = profileData?.records?.results || [];
+  const pagination = profileData?.records?.pagination || {};
+  const metadata = profileData?.metadata;
+
+  const totalRecords = pagination.count || 0;
+  const hasRecords = records.length > 0;
+  const hasCalendarDays = summary?.calendar_days > 0;
 
   return (
     <PermissionWrapper requiredPermission="canViewProfile">
-      <PageContainer>
-        <EmployeeProfileHeader 
-          employeeMeta={profileGraph?.employee}
-          filters={filters}
-          onFilterChange={updateFilters}
-          onRefresh={handleRefreshAll}
-          isFetching={isProfileFetching}
-        />
+      <PageContainer className="bg-slate-50 min-h-screen">
+        {/* Top Navigation Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={handleNavigateBack}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            aria-label="Back to dashboard"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
 
-        {isProfileLoading ? (
-          <div className="space-y-6">
-            <SkeletonLoader variant="card" count={4} />
-            <SkeletonLoader variant="table" count={4} />
-          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-all disabled:opacity-50"
+            aria-label="Refresh profile data"
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+            {isFetching ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+
+        {isError ? (
+          <ProfileErrorState onRetry={handleRefresh} />
+        ) : isLoading ? (
+          <ProfileLoadingSkeleton />
         ) : (
-          <div className="space-y-6 animate-fade-in w-full">
-            <EmployeeIdentityCard employee={profileGraph?.employee} />
-            
-            <AttendanceSummaryCards summary={profileGraph?.summary} />
-            
-            <AttendanceCalendar calendarData={profileGraph?.calendar || profileGraph?.charts} />
-            
-            <AttendanceRecordsTable records={recordsList} />
+          <div className="space-y-6 pb-12">
+            {/* Employee Hero Header */}
+            <EmployeeProfileHeader
+              employee={employee}
+              metadata={metadata}
+              filters={filters}
+              onFilterChange={updateFilters}
+              onResetFilters={resetFilters}
+            />
 
-            {/* Server-Side Sliced Pagination Controller Links */}
-            {totalRecordsCount > filters.limit && (
-              <div className="flex justify-end pt-2 w-full">
-                <nav className="inline-flex gap-1" aria-label="History profile tables pagination navigation">
-                  <button
-                    type="button"
-                    disabled={filters.offset === 0}
-                    onClick={() => handlePageChange(Math.max(0, filters.offset - filters.limit))}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold disabled:opacity-40 transition-colors bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    disabled={filters.offset + filters.limit >= totalRecordsCount}
-                    onClick={() => handlePageChange(filters.offset + filters.limit)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold disabled:opacity-40 transition-colors bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300"
-                  >
-                    Next
-                  </button>
-                </nav>
-              </div>
+            {/* Summary KPI Cards */}
+            {summary && <AttendanceSummaryGrid summary={summary} />}
+
+            {/* Charts Section */}
+            {charts && hasCalendarDays && (
+              <AttendanceChartsSection charts={charts} />
+            )}
+
+            {/* Attendance Records */}
+            {hasRecords ? (
+              <AttendanceRecordsSection
+                records={records}
+                filters={filters}
+                onFilterChange={updateFilters}
+                onRecordClick={handleRecordClick}
+                pagination={{
+                  count: totalRecords,
+                  offset: filters.offset,
+                  limit: filters.limit,
+                  onPageChange: handlePageChange,
+                }}
+              />
+            ) : (
+              <EmptyAttendanceState
+                dateRange={metadata}
+                onClearFilters={resetFilters}
+              />
             )}
           </div>
         )}

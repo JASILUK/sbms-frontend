@@ -1,4 +1,4 @@
-// # attendance/components/hrManagement/dashboard/DashboardSummaryCards.jsx (UPDATED — with click handlers)
+// # attendance/components/hrManagement/dashboard/DashboardSummaryCards.jsx (CORRECTED)
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -8,7 +8,8 @@ const CARD_CONFIG = [
   { key: 'currently_working', label: 'Active Working', statusKey: 'WORKING', color: 'emerald' },
   { key: 'on_break', label: 'On Break', statusKey: 'BREAK', color: 'amber' },
   { key: 'checked_out', label: 'Checked Out', statusKey: 'CHECKED_OUT', color: 'blue' },
-  { key: 'absent_until_now', label: 'Not Started', statusKey: 'NOT_STARTED', color: 'rose' },
+  { key: 'on_leave', label: 'On Leave', statusKey: 'ON_LEAVE', color: 'violet' },
+  { key: 'absent_until_now', label: 'Absent', statusKey: 'NOT_STARTED', color: 'rose' },
 ];
 
 function SummaryCard({ title, value, color, isActive, isAlert, onClick }) {
@@ -18,6 +19,7 @@ function SummaryCard({ title, value, color, isActive, isAlert, onClick }) {
     amber: 'border-amber-200 text-amber-700 bg-amber-50 hover:border-amber-300',
     blue: 'border-blue-200 text-blue-700 bg-blue-50 hover:border-blue-300',
     rose: 'border-rose-200 text-rose-700 bg-rose-50 hover:border-rose-300',
+    violet: 'border-violet-200 text-violet-700 bg-violet-50 hover:border-violet-300',
   };
 
   return (
@@ -71,7 +73,7 @@ export const DashboardSummaryCards = React.memo(({ summary, onCardClick, activeS
         </div>
       )}
 
-      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full" aria-label="Workforce live status indicators">
+      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full" aria-label="Workforce live status indicators">
         {cards.map((card) => {
           const isActive = card.statusKey === 'REVIEW_REQUIRED'
             ? activeNeedsReview === 'true'

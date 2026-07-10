@@ -93,3 +93,107 @@ export const ATTENDANCE_THEME = {
     badge: 'critical',
   },
 };
+
+
+
+// Add these to your existing constants/hrAttendance.js
+
+export const CHART_COLORS = {
+  present: '#059669',
+  absent: '#dc2626',
+  halfDay: '#d97706',
+  leave: '#7c3aed',
+  holiday: '#2563eb',
+  weekend: '#64748b',
+  incomplete: '#ea580c',
+  reviewRequired: '#be123c',
+  workHours: '#0ea5e9',
+  overtime: '#f59e0b',
+  late: '#ef4444',
+  break: '#8b5cf6',
+  grid: '#f1f5f9',
+  text: '#64748b',
+};
+
+export const SUMMARY_CARD_CONFIG = [
+  {
+    key: 'attendance_percentage',
+    label: 'Attendance Rate',
+    icon: 'TrendingUp',
+    color: 'emerald',
+    suffix: '%',
+    description: 'Present / Working Days',
+  },
+  {
+    key: 'present_days',
+    label: 'Present Days',
+    icon: 'CheckCircle',
+    color: 'emerald',
+    suffix: '',
+    description: 'Days marked present',
+  },
+  {
+    key: 'absent_days',
+    label: 'Absent Days',
+    icon: 'XCircle',
+    color: 'rose',
+    suffix: '',
+    description: 'Days marked absent',
+  },
+  {
+    key: 'late_days',
+    label: 'Late Arrivals',
+    icon: 'Clock',
+    color: 'amber',
+    suffix: '',
+    description: 'Days with late check-in',
+  },
+  {
+    key: 'total_overtime_hours',
+    label: 'Overtime Hours',
+    icon: 'Zap',
+    color: 'violet',
+    suffix: 'h',
+    description: 'Total overtime logged',
+  },
+  {
+    key: 'needs_review',
+    label: 'Needs Review',
+    icon: 'AlertTriangle',
+    color: 'rose',
+    suffix: '',
+    description: 'Records flagged for HR',
+  },
+  {
+    key: 'average_work_hours',
+    label: 'Avg Daily Hours',
+    icon: 'Briefcase',
+    color: 'sky',
+    suffix: 'h',
+    description: 'Average hours per working day',
+  },
+];
+
+export const STATUS_LABELS = {
+  PRESENT: 'Present',
+  ABSENT: 'Absent',
+  HALF_DAY: 'Half Day',
+  LEAVE: 'Leave',
+  HOLIDAY: 'Holiday',
+  WEEKEND: 'Weekend',
+  INCOMPLETE: 'Incomplete',
+  REVIEW_REQUIRED: 'Review Required',
+};
+
+export const ORDERING_OPTIONS = [
+  { value: '-attendance_date', label: 'Date (Newest)' },
+  { value: 'attendance_date', label: 'Date (Oldest)' },
+  { value: '-check_in', label: 'Check In (Latest)' },
+  { value: 'check_in', label: 'Check In (Earliest)' },
+  { value: '-work_hours', label: 'Work Hours (High)' },
+  { value: 'work_hours', label: 'Work Hours (Low)' },
+  { value: '-late_minutes', label: 'Late (Most)' },
+  { value: 'late_minutes', label: 'Late (Least)' },
+  { value: '-overtime', label: 'Overtime (High)' },
+  { value: 'overtime', label: 'Overtime (Low)' },
+];
