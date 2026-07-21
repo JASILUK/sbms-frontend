@@ -10,6 +10,7 @@
 import { meetingRoutes } from "./meetings/routes";
 import {attendanceRoutes} from "./attendance/router"
 import { attendanceSetupRoutes } from "./attendance-setup/routes";
+import { projectRoutes } from "./projects";
 
 
  export const tenantRoutes = (
@@ -28,6 +29,9 @@ import { attendanceSetupRoutes } from "./attendance-setup/routes";
     {attendanceRoutes}
     {attendanceSetupRoutes}
 
+
+    {/* PROJECTS */}
+    {projectRoutes}
 
     {settingsRoutes}
     {employeeRoutes}

@@ -1,5 +1,12 @@
+// """
+// Attendance Routes — Updated with Reports Page
+
+// Registers the attendance module routes including the new
+// Reports page under the employee portal section.
+// """
+
 import React from "react";
-import { Route } from "react-router-dom";  
+import { Route } from "react-router-dom";
 
 import AttendanceLayout from "./layouts/AttendanceLayout";
 
@@ -21,11 +28,11 @@ import HREmployeeDirectoryPage from "./pages/hrManagement/HREmployeeDirectoryPag
 import HREmployeeProfilePage from "./pages/hrManagement/HREmployeeProfilePage";
 import HREmployeeAttendanceRecordDetailPage from "./pages/hrManagement/HRAttendanceRecordDetailPage";
 
-// 🆕 Step 1: Ingest Newly Provisioned Review Queue Page Interface Root Node
+// Review Queue Page
 import HRReviewQueuePage from "./pages/hrManagement/HRReviewQueuePage";
 
 // Security Framework Components
-import PermissionGuard from "../../auth/AuthGuard/permissionGuard"; 
+import PermissionGuard from "../../auth/AuthGuard/permissionGuard";
 
 export const attendanceRoutes = (
   <Route path="attendance" element={<AttendanceLayout />}>
@@ -34,10 +41,7 @@ export const attendanceRoutes = (
         ======================================================== */}
     <Route index element={<AttendanceDashboardPage />} />
     <Route path="my-attendance" element={<MyAttendancePage />} />
-    <Route path="team" element={<TeamAttendancePage />} />
-    <Route path="requests" element={<RequestsPage />} />
     <Route path="leaves" element={<LeavesPage />} />
-    <Route path="reports" element={<ReportsPage />} />
     <Route path="face-enrolment" element={<FaceEnrollmentPage />} />
 
     {/* ========================================================
@@ -45,16 +49,25 @@ export const attendanceRoutes = (
         ======================================================== */}
     <Route
       path="face-management"
-      element = {
+      element={
         <PermissionGuard permission="tenant.attendance.manage">
           <FaceEnrollmentManagementPage />
         </PermissionGuard>
       }
     />
 
+      <Route
+      path="reports"
+      element={
+        <PermissionGuard permission="tenant.attendance.manage">
+          <ReportsPage />
+        </PermissionGuard>
+      }
+    />
+
     <Route
       path="hr/dashboard"
-      element = {
+      element={
         <PermissionGuard permission="tenant.attendance.manage">
           <HRDashboardPage />
         </PermissionGuard>
@@ -88,7 +101,6 @@ export const attendanceRoutes = (
       }
     />
 
-    {/* 🆕 Step 2: Bind Targeted Route Endpoint Pattern to Guard Wrapper */}
     <Route
       path="hr/review-queue"
       element={
@@ -97,6 +109,5 @@ export const attendanceRoutes = (
         </PermissionGuard>
       }
     />
-    
   </Route>
 );

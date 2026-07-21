@@ -75,7 +75,7 @@ export default function TenantLayout() {
 
           {/* MAIN */}
           <motion.main
-            className="flex-1 flex flex-col min-h-0"
+            className="flex-1 flex flex-col min-w-0 min-h-0"
             initial={false}
             animate={{
               marginLeft: isMobile ? 0 : isOpen ? "280px" : "80px",
@@ -91,14 +91,17 @@ export default function TenantLayout() {
             {/* HEADER (FIXED) */}
             <TenantHeader />
 
-            {/* 🔥 CRITICAL FIX: NO GLOBAL SCROLL */}
-            <div className="flex-1 min-h-0 flex overflow-hidden">
-
-              {/* PAGE CONTAINER */}
-              <div className="flex-1 min-h-0 flex flex-col max-w-[1600px] w-full mx-auto">
+            {/* 
+              RESPONSIVE FIX:
+              - Changed from overflow-hidden to overflow-auto
+              - Added min-w-0 to prevent flex child from expanding beyond parent
+              - Removed max-w-[1600px] constraint that caused overflow clipping
+              - Page content now scrolls horizontally when table exceeds viewport
+            */}
+            <div className="flex-1 min-w-0 min-h-0 overflow-auto">
+              <div className="w-full">
                 <Outlet />
               </div>
-
             </div>
 
           </motion.main>

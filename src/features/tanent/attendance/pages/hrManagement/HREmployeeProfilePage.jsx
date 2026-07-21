@@ -19,23 +19,26 @@ import EmptyAttendanceState from "../../components/hrManagement/employeeProfile/
 
 /**
  * HREmployeeProfilePage — Premium Enterprise HR Attendance Workspace
- *
- * Architecture:
- *   Page → Header → Summary Grid → Charts Section → Records Section
- *
- * Navigation: Dashboard → Live Workforce → Employee Profile → Record Detail
  */
 export default function HREmployeeProfilePage() {
   const { membership_id } = useParams();
   const navigate = useNavigate();
+  
+  // Ensure your hook initializes defaults or fall back safely here
   const { filters, updateFilters, resetFilters } = useProfileQueryFilters();
+
+  // Standard enterprise default values for pagination parameters
+  const currentOffset = typeof filters?.offset === "number" ? filters.offset : 0;
+  const currentLimit = typeof filters?.limit === "number" ? filters.limit : 20;
 
   const serializedQueryParams = useMemo(() => {
     return serializeFilters({
       ...filters,
+      offset: currentOffset,
+      limit: currentLimit,
       membershipId: membership_id,
     });
-  }, [filters, membership_id]);
+  }, [filters, currentOffset, currentLimit, membership_id]);
 
   const {
     data: profileResponse,
@@ -70,7 +73,7 @@ export default function HREmployeeProfilePage() {
     [navigate]
   );
 
-  // Extract data from ApiResponse envelope
+  // Extract data from ApiResponse envelope safely
   const profileData = profileResponse?.data || profileResponse;
   const employee = profileData?.employee;
   const summary = profileData?.summary;
@@ -140,8 +143,8 @@ export default function HREmployeeProfilePage() {
                 onRecordClick={handleRecordClick}
                 pagination={{
                   count: totalRecords,
-                  offset: filters.offset,
-                  limit: filters.limit,
+                  offset: currentOffset,
+                  limit: currentLimit,
                   onPageChange: handlePageChange,
                 }}
               />

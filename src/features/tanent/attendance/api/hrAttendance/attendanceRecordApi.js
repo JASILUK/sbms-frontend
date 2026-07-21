@@ -47,6 +47,19 @@ export const attendanceRecordApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { recordId }) => [{ type: "HR_Record_Detail", id: recordId }],
     }),
+
+    // Injected Event Correction Workflow Endpoint
+    correctAttendanceEvent: builder.mutation({
+      query: (body) => ({
+        url: "/attendance/v1/hr-management/events/correction/",
+        method: "POST",
+        body,
+      }),
+      // Automatically refreshes the parent detail graph matching the current detail workspace parameters
+      invalidatesTags: (result, error, { recordId }) => [
+        { type: "HR_Record_Detail", id: recordId },
+      ],
+    }),
   }),
   overrideExisting: true,
 });
@@ -57,4 +70,5 @@ export const {
   useUnlockRecordMutation,
   useReprocessTimelineMutation,
   useRecalculateAttendanceMutation,
+  useCorrectAttendanceEventMutation,
 } = attendanceRecordApi;
